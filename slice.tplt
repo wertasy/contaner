@@ -1,0 +1,50 @@
+#ifndef __SLICE_MACRO_DEF_2336_
+#define __SLICE_MACRO_DEF_2336_
+
+#define concat_inner(a, b) a ## _ ## b
+#define concat_inner2(a, b) a ## b
+#define concat(a, b) concat_inner(a, b)
+#define concat2(a, b) concat_inner2(a, b)
+
+#define slice_cast(s) ((void *)((char *)(s)-offsetof(int_slice_t, arr)))
+#define slice_cap(s) ((int_slice_t *)slice_cast(s))->cap
+#define slice_len(s) ((int_slice_t *)slice_cast(s))->len
+
+#endif /* __SLICE_MACRO_DEF_2336_ */
+
+#if !defined(ELEM_TYPE) || !defined(CTNR_TYPE)
+    #error ELEM_TYPE or CTNR_TYPE undefined
+#endif
+
+#include <assert.h>
+#include <stdlib.h>
+#include <stddef.h>
+
+typedef struct {
+    int len;
+    int cap;
+    ELEM_TYPE arr[];
+} concat(CTNR_TYPE, t);
+
+
+ELEM_TYPE *concat(CTNR_TYPE, make)(int len, int cap) {
+    assert(len >= 0 && cap >= 0 && len < cap);
+    concat(CTNR_TYPE, t) *slice = (concat(CTNR_TYPE, t) *)malloc(sizeof(concat(CTNR_TYPE, t)) + sizeof(ELEM_TYPE) * cap);
+    slice->len = len;
+    slice->cap = cap;
+    return slice->arr;
+}
+
+ELEM_TYPE *concat(CTNR_TYPE, append)(ELEM_TYPE *slice, ELEM_TYPE elem) {
+    concat(CTNR_TYPE, t) *ctnr = slice_cast(slice);
+    if (ctnr->len >= ctnr->cap) {
+        size_t size = sizeof(concat(CTNR_TYPE, t)) + sizeof(ELEM_TYPE) * (ctnr->cap *= 2);
+        ctnr = (concat(CTNR_TYPE, t) *)realloc(ctnr, size);
+    }
+    ctnr->arr[ctnr->len++] = elem;
+    return ctnr->arr;
+}
+
+#undef ELEM_TYPE
+#undef CTNR_TYPE
+
